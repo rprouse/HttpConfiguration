@@ -39,20 +39,20 @@ namespace Alteridem.Http.Service.Native
         /// <summary>
         /// An HTTP_SERVICE_CONFIG_URLACL_KEY structure that identifies the URL reservation record.
         /// </summary>
-        HTTP_SERVICE_CONFIG_URLACL_KEY KeyDesc;
+        public HTTP_SERVICE_CONFIG_URLACL_KEY KeyDesc;
         /// <summary>
         /// An HTTP_SERVICE_CONFIG_URLACL_PARAM structure that holds the contents of the specified URL reservation record.
         /// </summary>
-        HTTP_SERVICE_CONFIG_URLACL_PARAM ParamDesc;
+        public HTTP_SERVICE_CONFIG_URLACL_PARAM ParamDesc;
     }
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     struct HTTP_SERVICE_CONFIG_URLACL_KEY
     {
         [MarshalAs(UnmanagedType.LPWStr)]
-        string pUrlPrefix;
+        public string pUrlPrefix;
 
-        HTTP_SERVICE_CONFIG_URLACL_KEY(string urlPrefix)
+        public HTTP_SERVICE_CONFIG_URLACL_KEY(string urlPrefix)
         {
             pUrlPrefix = urlPrefix;
         }
@@ -62,9 +62,9 @@ namespace Alteridem.Http.Service.Native
     struct HTTP_SERVICE_CONFIG_URLACL_PARAM
     {
         [MarshalAs(UnmanagedType.LPWStr)]
-        string pStringSecurityDescriptor;
+        public string pStringSecurityDescriptor;
 
-        HTTP_SERVICE_CONFIG_URLACL_PARAM(string securityDescriptor)
+        public HTTP_SERVICE_CONFIG_URLACL_PARAM(string securityDescriptor)
         {
             pStringSecurityDescriptor = securityDescriptor;
         }

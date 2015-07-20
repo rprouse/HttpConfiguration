@@ -41,11 +41,11 @@ namespace Alteridem.Http.Service.Native
         /// <summary>
         /// An HTTP_SERVICE_CONFIG_SSL_KEY structure that identifies the SSL certificate record.
         /// </summary>
-        HTTP_SERVICE_CONFIG_SSL_KEY KeyDesc;
+        public HTTP_SERVICE_CONFIG_SSL_KEY KeyDesc;
         /// <summary>
         /// An HTTP_SERVICE_CONFIG_SSL_PARAM structure that holds the contents of the specified SSL certificate record.
         /// </summary>
-        HTTP_SERVICE_CONFIG_SSL_PARAM ParamDesc;
+        public HTTP_SERVICE_CONFIG_SSL_PARAM ParamDesc;
     }
 
     /// <summary>
@@ -54,7 +54,7 @@ namespace Alteridem.Http.Service.Native
     [StructLayout(LayoutKind.Sequential)]
     struct HTTP_SERVICE_CONFIG_SSL_KEY
     {
-        IntPtr pIpPort;
+        public IntPtr pIpPort;
     }
 
     /// <summary>
@@ -63,18 +63,18 @@ namespace Alteridem.Http.Service.Native
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     struct HTTP_SERVICE_CONFIG_SSL_PARAM
     {
-        int SslHashLength;
-        IntPtr pSslHash;
-        Guid AppId;
+        public int SslHashLength;
+        public IntPtr pSslHash;
+        public Guid AppId;
         [MarshalAs(UnmanagedType.LPWStr)]
-        string pSslCertStoreName;
-        uint DefaultCertCheckMode;
-        int DefaultRevocationFreshnessTime;
-        int DefaultRevocationUrlRetrievalTimeout;
+        public string pSslCertStoreName;
+        public uint DefaultCertCheckMode;
+        public int DefaultRevocationFreshnessTime;
+        public int DefaultRevocationUrlRetrievalTimeout;
         [MarshalAs(UnmanagedType.LPWStr)]
-        string pDefaultSslCtlIdentifier;
+        public string pDefaultSslCtlIdentifier;
         [MarshalAs(UnmanagedType.LPWStr)]
-        string pDefaultSslCtlStoreName;
-        uint DefaultFlags;
+        public string pDefaultSslCtlStoreName;
+        public uint DefaultFlags;
     }
 }

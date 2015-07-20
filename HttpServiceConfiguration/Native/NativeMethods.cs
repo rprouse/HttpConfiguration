@@ -81,7 +81,7 @@ namespace Alteridem.Http.Service.Native
             [Optional] int InputConfigInfoLength,
             [In, Out, Optional] IntPtr pOutputConfigInfo,
             [Optional] int OutputConfigInfoLength,
-            [Out, Optional] int pReturnLength,
+            [Out, Optional] out int pReturnLength,
             IntPtr pOverlapped);
 
         /// <summary>
