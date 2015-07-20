@@ -1,4 +1,4 @@
-﻿namespace Alteridem.Http.Service
+﻿namespace Alteridem.Http.Service.Native
 {
     /// <summary>
     /// Return codes from Native API's

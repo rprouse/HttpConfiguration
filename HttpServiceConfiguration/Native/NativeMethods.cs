@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace Alteridem.Http.Service
+namespace Alteridem.Http.Service.Native
 {
 
     internal class NativeMethods

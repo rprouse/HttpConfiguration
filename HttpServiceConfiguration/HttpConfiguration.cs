@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Alteridem.Http.Service.Native;
+using System;
 
 namespace Alteridem.Http.Service
 {
