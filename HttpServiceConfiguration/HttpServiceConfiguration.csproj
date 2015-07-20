@@ -45,7 +45,12 @@
     <Compile Include="Native\Flags.cs" />
     <Compile Include="Native\HTTPAPI_VERSION.cs" />
     <Compile Include="Native\HTTP_SERVICE_CONFIG_ID.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_IP_LISTEN_PARAM.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_IP_LISTEN_QUERY.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_QUERY_TYPE.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_SSL_QUERY.cs" />
     <Compile Include="Native\HTTP_SERVICE_CONFIG_SSL_SET.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_URLACL_QUERY.cs" />
     <Compile Include="Native\HTTP_SERVICE_CONFIG_URLACL_SET.cs" />
     <Compile Include="Native\NativeMethods.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
