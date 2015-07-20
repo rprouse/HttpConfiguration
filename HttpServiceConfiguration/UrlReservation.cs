@@ -130,7 +130,7 @@ namespace Alteridem.Http.Service
 
                     if (retVal == ReturnCodes.ERROR_INSUFFICIENT_BUFFER)
                     {
-                        Marshal.ZeroFreeCoTaskMemUnicode(pOutputConfigInfo);
+                        Marshal.FreeCoTaskMem(pOutputConfigInfo);
                         pOutputConfigInfo = Marshal.AllocCoTaskMem(Convert.ToInt32(returnLength));
 
                         retVal = NativeMethods.HttpQueryServiceConfiguration(IntPtr.Zero,
