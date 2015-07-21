@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("HttpServiceConfiguration")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyTitle("HttpConfiguration")]
+[assembly: AssemblyDescription("C# wrapper classes to allow you to configure a Windows HTTP service programatically rather than call the various netsh http commands from the command line.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("HttpServiceConfiguration")]
-[assembly: AssemblyCopyright("Copyright ©  2015")]
+[assembly: AssemblyProduct("HttpConfiguration")]
+[assembly: AssemblyCopyright("Copyright © Rob Prouse 2015")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
