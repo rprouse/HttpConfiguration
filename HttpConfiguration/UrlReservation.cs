@@ -26,6 +26,7 @@ using Alteridem.Http.Configuration.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
@@ -68,18 +69,8 @@ namespace Alteridem.Http.Configuration
         /// <summary>
         /// The names of the users or groups who can make use of the reservation.
         /// </summary>
-        public IReadOnlyList<string> Users
-        {
-            get
-            {
-                var users = new List<string>();
-                foreach (SecurityIdentifier sec in _securityIdentifiers)
-                {
-                    users.Add(((NTAccount)sec.Translate(typeof(NTAccount))).Value);
-                }
-                return users;
-            }
-        }
+        public IReadOnlyList<string> Users =>
+            _securityIdentifiers.Select(sec => ((NTAccount)sec.Translate(typeof(NTAccount))).Value).ToList();
 
         /// <summary>
         /// The identities of the users who can make use of the reservation.
@@ -166,13 +157,13 @@ namespace Alteridem.Http.Configuration
                         pOutputConfigInfo = Marshal.AllocCoTaskMem(Convert.ToInt32(returnLength));
 
                         retVal = NativeMethods.HttpQueryServiceConfiguration(IntPtr.Zero,
-                        HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
-                        pInputConfigInfo,
-                        Marshal.SizeOf(inputConfigInfoSet),
-                        pOutputConfigInfo,
-                        returnLength,
-                        out returnLength,
-                        IntPtr.Zero);
+                            HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
+                            pInputConfigInfo,
+                            Marshal.SizeOf(inputConfigInfoSet),
+                            pOutputConfigInfo,
+                            returnLength,
+                            out returnLength,
+                            IntPtr.Zero);
                     }
 
                     if (retVal == ReturnCodes.NO_ERROR)
@@ -318,25 +309,13 @@ namespace Alteridem.Http.Configuration
         private static List<SecurityIdentifier> securityIdentifiersFromSDDL(string securityDescriptor)
         {
             var csd = new CommonSecurityDescriptor(false, false, securityDescriptor);
-            DiscretionaryAcl dacl = csd.DiscretionaryAcl;
-
-            var securityIdentifiers = new List<SecurityIdentifier>(dacl.Count);
-
-            foreach (CommonAce ace in dacl)
-            {
-                securityIdentifiers.Add(ace.SecurityIdentifier);
-            }
-            return securityIdentifiers;
+            return (from CommonAce ace in csd.DiscretionaryAcl select ace.SecurityIdentifier).ToList();
         }
 
         private static DiscretionaryAcl getDacl(List<SecurityIdentifier> securityIdentifiers)
         {
             var dacl = new DiscretionaryAcl(false, false, 16);
-
-            foreach (SecurityIdentifier sec in securityIdentifiers)
-            {
-                dacl.AddAccess(AccessControlType.Allow, sec, GENERIC_EXECUTE, InheritanceFlags.None, PropagationFlags.None);
-            }
+            securityIdentifiers.ForEach(sec => dacl.AddAccess(AccessControlType.Allow, sec, GENERIC_EXECUTE, InheritanceFlags.None, PropagationFlags.None));
             return dacl;
         }
 
