@@ -27,7 +27,6 @@ using System.Runtime.InteropServices;
 
 namespace Alteridem.Http.Configuration.Native
 {
-
     internal class NativeMethods
     {
         #region HTTP Server API Version 1.0 Configuration Functions
@@ -74,12 +73,12 @@ namespace Alteridem.Http.Configuration.Native
         /// <param name="pOverlapped">This parameter is reserved and must be NULL</param>
         /// <returns>If the function succeeds, the function returns NO_ERROR.</returns>
         [DllImport("httpapi.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        public static extern uint HttpQueryServiceConfiguration(
+        public static unsafe extern uint HttpQueryServiceConfiguration(
             IntPtr ServiceHandle,
             HTTP_SERVICE_CONFIG_ID ConfigId,
             [Optional] IntPtr pInputConfigInfo,
             [Optional] int InputConfigInfoLength,
-            [In, Out, Optional] IntPtr pOutputConfigInfo,
+            [In, Out, Optional] byte* pOutputConfigInfo,
             [Optional] int OutputConfigInfoLength,
             [Out, Optional] out int pReturnLength,
             IntPtr pOverlapped);

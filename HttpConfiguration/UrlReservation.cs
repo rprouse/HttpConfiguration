@@ -32,35 +32,46 @@ using System.Security.Principal;
 
 namespace Alteridem.Http.Configuration
 {
-
+    /// <summary>
+    /// Represents a reservation for a URL in HTTP.sys.
+    /// </summary>
     public class UrlReservation
     {
         private const int GENERIC_EXECUTE = 536870912;
+        private readonly List<SecurityIdentifier> _securityIdentifiers = new List<SecurityIdentifier>();
 
+        /// <summary>
+        /// Creates a new reservation object, but does not update HTTP.sys's configuration.
+        /// </summary>
+        /// <param name="url">The URL pattern of the reservation.</param>
         public UrlReservation(string url)
         {
-            _url = url;
+            Url = url;
         }
 
+        /// <summary>
+        /// Creates a new reservation object, but does not update HTTP.sys's configuration.
+        /// </summary>
+        /// <param name="url">The URL pattern of the reservation.</param>
+        /// <param name="securityIdentifiers">The users who have permission to use the reservation.</param>
         public UrlReservation(string url, IList<SecurityIdentifier> securityIdentifiers)
         {
-            _url = url;
+            Url = url;
             _securityIdentifiers.AddRange(securityIdentifiers);
         }
+        /// <summary>
+        /// The URL pattern of the reservation.
+        /// </summary>
+        public string Url { get; }
 
-        private string _url;
-        public string Url
-        {
-            get { return _url; }
-        }
-
-        private List<SecurityIdentifier> _securityIdentifiers = new List<SecurityIdentifier>();
-
+        /// <summary>
+        /// The names of the users or groups who can make use of the reservation.
+        /// </summary>
         public IReadOnlyList<string> Users
         {
             get
             {
-                List<string> users = new List<string>();
+                var users = new List<string>();
                 foreach (SecurityIdentifier sec in _securityIdentifiers)
                 {
                     users.Add(((NTAccount)sec.Translate(typeof(NTAccount))).Value);
@@ -69,94 +80,139 @@ namespace Alteridem.Http.Configuration
             }
         }
 
+        /// <summary>
+        /// The identities of the users who can make use of the reservation.
+        /// </summary>
+        public IReadOnlyList<SecurityIdentifier> SIDs
+        {
+            get { return _securityIdentifiers; }
+        }
+
+        /// <summary>
+        /// Adds a user to the list of identities who have access to the URL reservation.
+        /// </summary>
+        /// <param name="user">An NT account name.</param>
         public void AddUser(string user)
         {
             var account = new NTAccount(user);
-            var sid = account.Translate(typeof(SecurityIdentifier)) as SecurityIdentifier;
+            var sid = (SecurityIdentifier)account.Translate(typeof(SecurityIdentifier));
             AddSecurityIdentifier(sid);
         }
 
+        /// <summary>
+        /// Adds a user to the list of identities who have access to the URL reservation.
+        /// </summary>
+        /// <param name="sid">The SID of the user or group.</param>
         public void AddSecurityIdentifier(SecurityIdentifier sid)
         {
             _securityIdentifiers.Add(sid);
         }
 
+        /// <summary>
+        /// Clears all entries from the list of security identifiers.
+        /// </summary>
         public void ClearUsers()
         {
-            this._securityIdentifiers.Clear();
+            _securityIdentifiers.Clear();
         }
 
+        /// <summary>
+        /// Creates the reservation in HTTP.sys.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown if a reservation for this URL already exists.</exception>
+        /// <exception cref="Win32Exception">Throw if an unexpected error occures while creating the reservation.</exception>
         public void Create()
         {
-            UrlReservation.Create(this);
+            Create(this);
         }
 
+        /// <summary>
+        /// Deletes this reservation from the HTTP.sys configuration.
+        /// </summary>
+        /// <exception cref="Win32Exception">Throw if an unexpected error occures while deleting the reservation.</exception>
         public void Delete()
         {
-            UrlReservation.Delete(this);
+            Delete(this);
         }
 
         #region Get All
-        public static IReadOnlyList<UrlReservation> GetAll()
+        /// <summary>
+        /// Returns a list of all configured URL reservations on this computer.
+        /// </summary>
+        /// <returns></returns>
+        public unsafe static IReadOnlyList<UrlReservation> GetAll()
         {
             var revs = new List<UrlReservation>();
 
             uint retVal = NativeMethods.HttpInitialize(HTTPAPI_VERSION.VERSION_1, Flags.HTTP_INITIALIZE_CONFIG, IntPtr.Zero);
             if (retVal == ReturnCodes.NO_ERROR)
             {
-                var inputConfigInfoSet = new HTTP_SERVICE_CONFIG_URLACL_QUERY();
-                inputConfigInfoSet.QueryDesc = HTTP_SERVICE_CONFIG_QUERY_TYPE.HttpServiceConfigQueryNext;
-
-                uint i = 0;
-                while (retVal == ReturnCodes.NO_ERROR)
+                try
                 {
-                    inputConfigInfoSet.dwToken = i;
+                    var inputConfigInfoSet = new HTTP_SERVICE_CONFIG_URLACL_QUERY();
+                    inputConfigInfoSet.QueryDesc = HTTP_SERVICE_CONFIG_QUERY_TYPE.HttpServiceConfigQueryNext;
+                    inputConfigInfoSet.dwToken = 0;
 
-                    IntPtr pInputConfigInfo = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(HTTP_SERVICE_CONFIG_URLACL_QUERY)));
-                    Marshal.StructureToPtr(inputConfigInfoSet, pInputConfigInfo, false);
+                    byte[] buf = new byte[128];
 
-                    var outputConfigInfo = new HTTP_SERVICE_CONFIG_URLACL_SET();
-                    IntPtr pOutputConfigInfo = Marshal.AllocCoTaskMem(0);
-
-                    int returnLength = 0;
-                    retVal = NativeMethods.HttpQueryServiceConfiguration(IntPtr.Zero,
-                        HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
-                        pInputConfigInfo,
-                        Marshal.SizeOf(inputConfigInfoSet),
-                        pOutputConfigInfo,
-                        returnLength,
-                        out returnLength,
-                        IntPtr.Zero);
-
-                    if (retVal == ReturnCodes.ERROR_INSUFFICIENT_BUFFER)
+                    uint token = 0;
+                    while (retVal == ReturnCodes.NO_ERROR)
                     {
-                        Marshal.FreeCoTaskMem(pOutputConfigInfo);
-                        pOutputConfigInfo = Marshal.AllocCoTaskMem(Convert.ToInt32(returnLength));
+                        inputConfigInfoSet.dwToken = token;
 
-                        retVal = NativeMethods.HttpQueryServiceConfiguration(IntPtr.Zero,
-                        HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
-                        pInputConfigInfo,
-                        Marshal.SizeOf(inputConfigInfoSet),
-                        pOutputConfigInfo,
-                        returnLength,
-                        out returnLength,
-                        IntPtr.Zero);
+                        IntPtr pInputConfigInfo = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(HTTP_SERVICE_CONFIG_URLACL_QUERY)));
+                        Marshal.StructureToPtr(inputConfigInfoSet, pInputConfigInfo, false);
+
+                        int returnLength = 0;
+                        retVal = NativeMethods.HttpQueryServiceConfiguration(
+                            IntPtr.Zero,
+                            HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
+                            pInputConfigInfo,
+                            Marshal.SizeOf(inputConfigInfoSet),
+                            null,
+                            0,
+                            out returnLength,
+                            IntPtr.Zero);
+
+                        if (retVal == ReturnCodes.ERROR_INSUFFICIENT_BUFFER && returnLength > buf.Length)
+                        {
+                            buf = new byte[returnLength];
+                        }
+
+                        fixed (byte* pBuf = buf)
+                        {
+                            retVal = NativeMethods.HttpQueryServiceConfiguration(
+                                IntPtr.Zero,
+                                HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
+                                pInputConfigInfo,
+                                Marshal.SizeOf(inputConfigInfoSet),
+                                pBuf,
+                                buf.Length,
+                                out returnLength,
+                                IntPtr.Zero);
+
+                            if (retVal == ReturnCodes.NO_ERROR)
+                            {
+                                var outputConfigInfo = (HTTP_SERVICE_CONFIG_URLACL_SET)Marshal.PtrToStructure(
+                                    new IntPtr(pBuf), typeof(HTTP_SERVICE_CONFIG_URLACL_SET));
+                                var rev = new UrlReservation(outputConfigInfo.KeyDesc.pUrlPrefix,
+                                    securityIdentifiersFromSDDL(outputConfigInfo.ParamDesc.pStringSecurityDescriptor));
+                                revs.Add(rev);
+                            }
+                        }
+                        Marshal.FreeCoTaskMem(pInputConfigInfo);
+                        token++;
                     }
 
-                    if (retVal == ReturnCodes.NO_ERROR)
+                    if (retVal != ReturnCodes.ERROR_NO_MORE_ITEMS)
                     {
-                        outputConfigInfo = (HTTP_SERVICE_CONFIG_URLACL_SET)Marshal.PtrToStructure(pOutputConfigInfo, typeof(HTTP_SERVICE_CONFIG_URLACL_SET));
-                        UrlReservation rev = new UrlReservation(outputConfigInfo.KeyDesc.pUrlPrefix, securityIdentifiersFromSDDL(outputConfigInfo.ParamDesc.pStringSecurityDescriptor));
-                        revs.Add(rev);
+                        throw new Win32Exception((int)retVal);
                     }
-
-                    Marshal.FreeCoTaskMem(pOutputConfigInfo);
-                    Marshal.FreeCoTaskMem(pInputConfigInfo);
-
-                    i++;
                 }
-
-                retVal = NativeMethods.HttpTerminate(Flags.HTTP_INITIALIZE_CONFIG, IntPtr.Zero);
+                finally
+                {
+                    retVal = NativeMethods.HttpTerminate(Flags.HTTP_INITIALIZE_CONFIG, IntPtr.Zero);
+                }
             }
 
             if (ReturnCodes.NO_ERROR != retVal)
@@ -169,7 +225,7 @@ namespace Alteridem.Http.Configuration
         #endregion
 
         #region Create
-        public static void Create(UrlReservation urlReservation)
+        static void Create(UrlReservation urlReservation)
         {
             string sddl = generateSddl(urlReservation._securityIdentifiers);
             reserveURL(urlReservation.Url, sddl);
@@ -180,53 +236,43 @@ namespace Alteridem.Http.Configuration
             uint retVal = NativeMethods.HttpInitialize(HTTPAPI_VERSION.VERSION_1, Flags.HTTP_INITIALIZE_CONFIG, IntPtr.Zero);
             if (retVal == ReturnCodes.NO_ERROR)
             {
-                var keyDesc = new HTTP_SERVICE_CONFIG_URLACL_KEY(networkURL);
-                var paramDesc = new HTTP_SERVICE_CONFIG_URLACL_PARAM(securityDescriptor);
-
-                var inputConfigInfoSet = new HTTP_SERVICE_CONFIG_URLACL_SET();
-                inputConfigInfoSet.KeyDesc = keyDesc;
-                inputConfigInfoSet.ParamDesc = paramDesc;
-
-                IntPtr pInputConfigInfo = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(HTTP_SERVICE_CONFIG_URLACL_SET)));
-                Marshal.StructureToPtr(inputConfigInfoSet, pInputConfigInfo, false);
-
-                retVal = NativeMethods.HttpSetServiceConfiguration(IntPtr.Zero,
-                    HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
-                    pInputConfigInfo,
-                    Marshal.SizeOf(inputConfigInfoSet),
-                    IntPtr.Zero);
-
-                if (ReturnCodes.ERROR_ALREADY_EXISTS == retVal)
+                try
                 {
-                    retVal = NativeMethods.HttpDeleteServiceConfiguration(IntPtr.Zero,
-                    HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
-                    pInputConfigInfo,
-                    Marshal.SizeOf(inputConfigInfoSet),
-                    IntPtr.Zero);
+                    var keyDesc = new HTTP_SERVICE_CONFIG_URLACL_KEY(networkURL);
+                    var paramDesc = new HTTP_SERVICE_CONFIG_URLACL_PARAM(securityDescriptor);
 
-                    if (retVal == ReturnCodes.NO_ERROR)
-                    {
-                        retVal = NativeMethods.HttpSetServiceConfiguration(IntPtr.Zero,
-                            HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
-                            pInputConfigInfo,
-                            Marshal.SizeOf(inputConfigInfoSet),
-                            IntPtr.Zero);
-                    }
+                    var inputConfigInfoSet = new HTTP_SERVICE_CONFIG_URLACL_SET();
+                    inputConfigInfoSet.KeyDesc = keyDesc;
+                    inputConfigInfoSet.ParamDesc = paramDesc;
+
+                    IntPtr pInputConfigInfo = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(HTTP_SERVICE_CONFIG_URLACL_SET)));
+                    Marshal.StructureToPtr(inputConfigInfoSet, pInputConfigInfo, false);
+
+                    retVal = NativeMethods.HttpSetServiceConfiguration(IntPtr.Zero,
+                        HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
+                        pInputConfigInfo,
+                        Marshal.SizeOf(inputConfigInfoSet),
+                        IntPtr.Zero);
                 }
-
-                Marshal.FreeCoTaskMem(pInputConfigInfo);
-                NativeMethods.HttpTerminate(Flags.HTTP_INITIALIZE_CONFIG, IntPtr.Zero);
+                finally
+                {
+                    NativeMethods.HttpTerminate(Flags.HTTP_INITIALIZE_CONFIG, IntPtr.Zero);
+                }
             }
 
-            if (ReturnCodes.NO_ERROR != retVal)
+            if (ReturnCodes.ERROR_ALREADY_EXISTS == retVal)
             {
-                throw new Win32Exception(Convert.ToInt32(retVal));
+                throw new ArgumentException("A reservation for this URL already exists.");
+            }
+            else if (ReturnCodes.NO_ERROR != retVal)
+            {
+                throw new Win32Exception((int)retVal);
             }
         }
         #endregion
 
         #region Delete
-        public static void Delete(UrlReservation urlReservation)
+        static void Delete(UrlReservation urlReservation)
         {
             string sddl = generateSddl(urlReservation._securityIdentifiers);
             freeURL(urlReservation.Url, sddl);
@@ -244,17 +290,13 @@ namespace Alteridem.Http.Configuration
                 urlAclSet.KeyDesc = urlAclKey;
                 urlAclSet.ParamDesc = urlAclParam;
 
-                IntPtr configInformation = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(HTTP_SERVICE_CONFIG_URLACL_SET)));
-                Marshal.StructureToPtr(urlAclSet, configInformation, false);
                 int configInformationSize = Marshal.SizeOf(urlAclSet);
 
                 retVal = NativeMethods.HttpDeleteServiceConfiguration(IntPtr.Zero,
                     HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
-                    configInformation,
+                    ref urlAclSet,
                     configInformationSize,
                     IntPtr.Zero);
-
-                Marshal.FreeCoTaskMem(configInformation);
 
                 NativeMethods.HttpTerminate(Flags.HTTP_INITIALIZE_CONFIG, IntPtr.Zero);
             }
@@ -278,7 +320,6 @@ namespace Alteridem.Http.Configuration
             {
                 securityIdentifiers.Add(ace.SecurityIdentifier);
             }
-
             return securityIdentifiers;
         }
 
@@ -311,22 +352,5 @@ namespace Alteridem.Http.Configuration
             return getSecurityDescriptor(securityIdentifiers).GetSddlForm(AccessControlSections.Access);
         }
         #endregion
-
-        public byte[] ToDaclBytes()
-        {
-
-            DiscretionaryAcl dacl = getDacl(this._securityIdentifiers);
-            var bytes = new byte[dacl.BinaryLength];
-            dacl.GetBinaryForm(bytes, 0);
-            return bytes;
-        }
-
-        public byte[] ToSaclBytes()
-        {
-            var sacl = new SystemAcl(false, false, 0);
-            var bytes = new byte[sacl.BinaryLength];
-            sacl.GetBinaryForm(bytes, 0);
-            return bytes;
-        }
     }
 }
