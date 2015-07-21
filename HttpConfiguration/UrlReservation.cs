@@ -38,6 +38,7 @@ namespace Alteridem.Http.Configuration
     public class UrlReservation
     {
         private const int GENERIC_EXECUTE = 536870912;
+        private List<SecurityIdentifier> _securityIdentifiers = new List<SecurityIdentifier>();
 
         /// <summary>
         /// Creates a new reservation object, but does not update HTTP.sys's configuration.
@@ -45,7 +46,7 @@ namespace Alteridem.Http.Configuration
         /// <param name="url">The URL pattern of the reservation.</param>
         public UrlReservation(string url)
         {
-            _url = url;
+            Url = url;
         }
 
         /// <summary>
@@ -55,20 +56,14 @@ namespace Alteridem.Http.Configuration
         /// <param name="securityIdentifiers">The users who have permission to use the reservation.</param>
         public UrlReservation(string url, IList<SecurityIdentifier> securityIdentifiers)
         {
-            _url = url;
+            Url = url;
             _securityIdentifiers.AddRange(securityIdentifiers);
         }
 
-        private string _url;
         /// <summary>
         /// The URL pattern of the reservation.
         /// </summary>
-        public string Url
-        {
-            get { return _url; }
-        }
-
-        private List<SecurityIdentifier> _securityIdentifiers = new List<SecurityIdentifier>();
+        public string Url { get; }
 
         /// <summary>
         /// The names of the users or groups who can make use of the reservation.
@@ -77,7 +72,7 @@ namespace Alteridem.Http.Configuration
         {
             get
             {
-                List<string> users = new List<string>();
+                var users = new List<string>();
                 foreach (SecurityIdentifier sec in _securityIdentifiers)
                 {
                     users.Add(((NTAccount)sec.Translate(typeof(NTAccount))).Value);
@@ -89,10 +84,7 @@ namespace Alteridem.Http.Configuration
         /// <summary>
         /// The identities of the users who can make use of the reservation.
         /// </summary>
-        public IReadOnlyList<SecurityIdentifier> SIDs
-        {
-            get { return _securityIdentifiers; }
-        }
+        public IReadOnlyList<SecurityIdentifier> SIDs => _securityIdentifiers;
 
         /// <summary>
         /// Adds a user to the list of identities who have access to the URL reservation.
@@ -109,18 +101,12 @@ namespace Alteridem.Http.Configuration
         /// Adds a user to the list of identities who have access to the URL reservation.
         /// </summary>
         /// <param name="sid">The SID of the user or group.</param>
-        public void AddSecurityIdentifier(SecurityIdentifier sid)
-        {
-            _securityIdentifiers.Add(sid);
-        }
+        public void AddSecurityIdentifier(SecurityIdentifier sid) => _securityIdentifiers.Add(sid);
 
         /// <summary>
         /// Clears all entries from the list of security identifiers.
         /// </summary>
-        public void ClearUsers()
-        {
-            this._securityIdentifiers.Clear();
-        }
+        public void ClearUsers() => _securityIdentifiers.Clear();
 
         /// <summary>
         /// Creates the reservation in HTTP.sys.
@@ -128,19 +114,13 @@ namespace Alteridem.Http.Configuration
         /// <param name="deleteIfExists">If the given reservation exists, will delete the existing reservation and recreate it.</param>
         /// <exception cref="ArgumentException">Thrown if a reservation for this URL already exists.</exception>
         /// <exception cref="Win32Exception">Throw if an unexpected error occures while creating the reservation.</exception>
-        public void Create(bool deleteIfExists = false)
-        {
-            UrlReservation.Create(this, deleteIfExists);
-        }
+        public void Create(bool deleteIfExists = false) => UrlReservation.Create(this, deleteIfExists);
 
         /// <summary>
         /// Deletes this reservation from the HTTP.sys configuration.
         /// </summary>
         /// <exception cref="Win32Exception">Throw if an unexpected error occures while deleting the reservation.</exception>
-        public void Delete()
-        {
-            UrlReservation.Delete(this);
-        }
+        public void Delete() => UrlReservation.Delete(this);
 
         #region Get All
 
@@ -151,12 +131,13 @@ namespace Alteridem.Http.Configuration
         public static IReadOnlyList<UrlReservation> GetAll()
         {
             var revs = new List<UrlReservation>();
-
             uint retVal = NativeMethods.HttpInitialize(HTTPAPI_VERSION.VERSION_1, Flags.HTTP_INITIALIZE_CONFIG, IntPtr.Zero);
             if (retVal == ReturnCodes.NO_ERROR)
             {
-                var inputConfigInfoSet = new HTTP_SERVICE_CONFIG_URLACL_QUERY();
-                inputConfigInfoSet.QueryDesc = HTTP_SERVICE_CONFIG_QUERY_TYPE.HttpServiceConfigQueryNext;
+                var inputConfigInfoSet = new HTTP_SERVICE_CONFIG_URLACL_QUERY
+                {
+                    QueryDesc = HTTP_SERVICE_CONFIG_QUERY_TYPE.HttpServiceConfigQueryNext
+                };
 
                 uint i = 0;
                 while (retVal == ReturnCodes.NO_ERROR)
@@ -206,15 +187,13 @@ namespace Alteridem.Http.Configuration
 
                     i++;
                 }
-
                 retVal = NativeMethods.HttpTerminate(Flags.HTTP_INITIALIZE_CONFIG, IntPtr.Zero);
             }
 
-            if (ReturnCodes.NO_ERROR != retVal)
+            if (retVal != ReturnCodes.NO_ERROR)
             {
                 throw new Win32Exception(Convert.ToInt32(retVal));
             }
-
             return revs;
         }
 
@@ -241,9 +220,11 @@ namespace Alteridem.Http.Configuration
                 var keyDesc = new HTTP_SERVICE_CONFIG_URLACL_KEY(networkURL);
                 var paramDesc = new HTTP_SERVICE_CONFIG_URLACL_PARAM(securityDescriptor);
 
-                var inputConfigInfoSet = new HTTP_SERVICE_CONFIG_URLACL_SET();
-                inputConfigInfoSet.KeyDesc = keyDesc;
-                inputConfigInfoSet.ParamDesc = paramDesc;
+                var inputConfigInfoSet = new HTTP_SERVICE_CONFIG_URLACL_SET()
+                {
+                    KeyDesc = keyDesc,
+                    ParamDesc = paramDesc
+                };
 
                 IntPtr pInputConfigInfo = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(HTTP_SERVICE_CONFIG_URLACL_SET)));
                 Marshal.StructureToPtr(inputConfigInfoSet, pInputConfigInfo, false);
@@ -254,13 +235,13 @@ namespace Alteridem.Http.Configuration
                     Marshal.SizeOf(inputConfigInfoSet),
                     IntPtr.Zero);
 
-                if (ReturnCodes.ERROR_ALREADY_EXISTS == retVal)
+                if (ReturnCodes.ERROR_ALREADY_EXISTS == retVal && deleteIfExists)
                 {
                     retVal = NativeMethods.HttpDeleteServiceConfiguration(IntPtr.Zero,
-                    HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
-                    pInputConfigInfo,
-                    Marshal.SizeOf(inputConfigInfoSet),
-                    IntPtr.Zero);
+                        HTTP_SERVICE_CONFIG_ID.HttpServiceConfigUrlAclInfo,
+                        pInputConfigInfo,
+                        Marshal.SizeOf(inputConfigInfoSet),
+                        IntPtr.Zero);
 
                     if (retVal == ReturnCodes.NO_ERROR)
                     {
@@ -271,12 +252,11 @@ namespace Alteridem.Http.Configuration
                             IntPtr.Zero);
                     }
                 }
-
                 Marshal.FreeCoTaskMem(pInputConfigInfo);
                 NativeMethods.HttpTerminate(Flags.HTTP_INITIALIZE_CONFIG, IntPtr.Zero);
             }
 
-            if (ReturnCodes.NO_ERROR != retVal)
+            if (retVal != ReturnCodes.NO_ERROR)
             {
                 throw new Win32Exception(Convert.ToInt32(retVal));
             }
@@ -304,9 +284,11 @@ namespace Alteridem.Http.Configuration
                 var urlAclKey = new HTTP_SERVICE_CONFIG_URLACL_KEY(networkURL);
                 var urlAclParam = new HTTP_SERVICE_CONFIG_URLACL_PARAM(securityDescriptor);
 
-                var urlAclSet = new HTTP_SERVICE_CONFIG_URLACL_SET();
-                urlAclSet.KeyDesc = urlAclKey;
-                urlAclSet.ParamDesc = urlAclParam;
+                var urlAclSet = new HTTP_SERVICE_CONFIG_URLACL_SET
+                {
+                    KeyDesc = urlAclKey,
+                    ParamDesc = urlAclParam
+                };
 
                 IntPtr configInformation = Marshal.AllocCoTaskMem(Marshal.SizeOf(typeof(HTTP_SERVICE_CONFIG_URLACL_SET)));
                 Marshal.StructureToPtr(urlAclSet, configInformation, false);
@@ -323,7 +305,7 @@ namespace Alteridem.Http.Configuration
                 NativeMethods.HttpTerminate(Flags.HTTP_INITIALIZE_CONFIG, IntPtr.Zero);
             }
 
-            if (ReturnCodes.NO_ERROR != retVal)
+            if (retVal != ReturnCodes.NO_ERROR)
             {
                 throw new Win32Exception(Convert.ToInt32(retVal));
             }
@@ -344,7 +326,6 @@ namespace Alteridem.Http.Configuration
             {
                 securityIdentifiers.Add(ace.SecurityIdentifier);
             }
-
             return securityIdentifiers;
         }
 
@@ -372,15 +353,12 @@ namespace Alteridem.Http.Configuration
             return securityDescriptor;
         }
 
-        private static string generateSddl(List<SecurityIdentifier> securityIdentifiers)
-        {
-            return getSecurityDescriptor(securityIdentifiers).GetSddlForm(AccessControlSections.Access);
-        }
+        private static string generateSddl(List<SecurityIdentifier> securityIdentifiers) =>
+            getSecurityDescriptor(securityIdentifiers).GetSddlForm(AccessControlSections.Access);
 
         internal byte[] ToDaclBytes()
         {
-
-            DiscretionaryAcl dacl = getDacl(this._securityIdentifiers);
+            DiscretionaryAcl dacl = getDacl(_securityIdentifiers);
             var bytes = new byte[dacl.BinaryLength];
             dacl.GetBinaryForm(bytes, 0);
             return bytes;
