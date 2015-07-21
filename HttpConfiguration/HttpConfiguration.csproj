@@ -4,17 +4,16 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B64A6502-13A2-4072-B56B-F7DC12EB1F00}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{E595CE28-E9C9-40A4-8D38-2952835E71B7}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>HttpServiceConfiguration.TestApp</RootNamespace>
-    <AssemblyName>HttpServiceConfiguration.TestApp</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <RootNamespace>Alteridem.Http.Configuration</RootNamespace>
+    <AssemblyName>HttpConfiguration</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -24,7 +23,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -43,17 +41,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="HttpConfiguration.cs" />
+    <Compile Include="Native\Flags.cs" />
+    <Compile Include="Native\HTTPAPI_VERSION.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_ID.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_IP_LISTEN_PARAM.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_IP_LISTEN_QUERY.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_QUERY_TYPE.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_SSL_QUERY.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_SSL_SET.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_URLACL_QUERY.cs" />
+    <Compile Include="Native\HTTP_SERVICE_CONFIG_URLACL_SET.cs" />
+    <Compile Include="Native\NativeMethods.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\HttpServiceConfiguration\HttpServiceConfiguration.csproj">
-      <Project>{e595ce28-e9c9-40a4-8d38-2952835e71b7}</Project>
-      <Name>HttpServiceConfiguration</Name>
-    </ProjectReference>
+    <Compile Include="Native\ReturnCodes.cs" />
+    <Compile Include="UrlReservation.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

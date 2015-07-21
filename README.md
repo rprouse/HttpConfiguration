@@ -1,4 +1,4 @@
-# Http Service Configuration
+# Http Configuration
 
 C# wrapper classes to allow you to configure a Windows HTTP service programatically rather than call the various `netsh http` commands from the command line.
 

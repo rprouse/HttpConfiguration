@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.22823.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpServiceConfiguration", "HttpServiceConfiguration\HttpServiceConfiguration.csproj", "{E595CE28-E9C9-40A4-8D38-2952835E71B7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpConfiguration", "HttpConfiguration\HttpConfiguration.csproj", "{E595CE28-E9C9-40A4-8D38-2952835E71B7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{802BCD41-3F6F-4552-840B-321F9178504A}"
 	ProjectSection(SolutionItems) = preProject
@@ -13,7 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpServiceConfiguration.TestApp", "HttpServiceConfiguration.TestApp\HttpServiceConfiguration.TestApp.csproj", "{B64A6502-13A2-4072-B56B-F7DC12EB1F00}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HttpConfiguration.TestApp", "HttpConfiguration.TestApp\HttpConfiguration.TestApp.csproj", "{B64A6502-13A2-4072-B56B-F7DC12EB1F00}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
