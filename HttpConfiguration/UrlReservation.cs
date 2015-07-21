@@ -32,16 +32,27 @@ using System.Security.Principal;
 
 namespace Alteridem.Http.Configuration
 {
-
+    /// <summary>
+    /// Represents a reservation for a URL in HTTP.sys.
+    /// </summary>
     public class UrlReservation
     {
         private const int GENERIC_EXECUTE = 536870912;
 
+        /// <summary>
+        /// Creates a new reservation object, but does not update HTTP.sys's configuration.
+        /// </summary>
+        /// <param name="url">The URL pattern of the reservation.</param>
         public UrlReservation(string url)
         {
             _url = url;
         }
 
+        /// <summary>
+        /// Creates a new reservation object, but does not update HTTP.sys's configuration.
+        /// </summary>
+        /// <param name="url">The URL pattern of the reservation.</param>
+        /// <param name="securityIdentifiers">The users who have permission to use the reservation.</param>
         public UrlReservation(string url, IList<SecurityIdentifier> securityIdentifiers)
         {
             _url = url;
@@ -49,6 +60,9 @@ namespace Alteridem.Http.Configuration
         }
 
         private string _url;
+        /// <summary>
+        /// The URL pattern of the reservation.
+        /// </summary>
         public string Url
         {
             get { return _url; }
@@ -56,6 +70,9 @@ namespace Alteridem.Http.Configuration
 
         private List<SecurityIdentifier> _securityIdentifiers = new List<SecurityIdentifier>();
 
+        /// <summary>
+        /// The names of the users or groups who can make use of the reservation.
+        /// </summary>
         public IReadOnlyList<string> Users
         {
             get
@@ -69,6 +86,18 @@ namespace Alteridem.Http.Configuration
             }
         }
 
+        /// <summary>
+        /// The identities of the users who can make use of the reservation.
+        /// </summary>
+        public IReadOnlyList<SecurityIdentifier> SIDs
+        {
+            get { return _securityIdentifiers; }
+        }
+
+        /// <summary>
+        /// Adds a user to the list of identities who have access to the URL reservation.
+        /// </summary>
+        /// <param name="user">An NT account name.</param>
         public void AddUser(string user)
         {
             var account = new NTAccount(user);
@@ -76,27 +105,49 @@ namespace Alteridem.Http.Configuration
             AddSecurityIdentifier(sid);
         }
 
+        /// <summary>
+        /// Adds a user to the list of identities who have access to the URL reservation.
+        /// </summary>
+        /// <param name="sid">The SID of the user or group.</param>
         public void AddSecurityIdentifier(SecurityIdentifier sid)
         {
             _securityIdentifiers.Add(sid);
         }
 
+        /// <summary>
+        /// Clears all entries from the list of security identifiers.
+        /// </summary>
         public void ClearUsers()
         {
             this._securityIdentifiers.Clear();
         }
 
-        public void Create()
+        /// <summary>
+        /// Creates the reservation in HTTP.sys.
+        /// </summary>
+        /// <param name="deleteIfExists">If the given reservation exists, will delete the existing reservation and recreate it.</param>
+        /// <exception cref="ArgumentException">Thrown if a reservation for this URL already exists.</exception>
+        /// <exception cref="Win32Exception">Throw if an unexpected error occures while creating the reservation.</exception>
+        public void Create(bool deleteIfExists = false)
         {
-            UrlReservation.Create(this);
+            UrlReservation.Create(this, deleteIfExists);
         }
 
+        /// <summary>
+        /// Deletes this reservation from the HTTP.sys configuration.
+        /// </summary>
+        /// <exception cref="Win32Exception">Throw if an unexpected error occures while deleting the reservation.</exception>
         public void Delete()
         {
             UrlReservation.Delete(this);
         }
 
         #region Get All
+
+        /// <summary>
+        /// Returns a list of all configured URL reservations on this computer.
+        /// </summary>
+        /// <returns></returns>
         public static IReadOnlyList<UrlReservation> GetAll()
         {
             var revs = new List<UrlReservation>();
@@ -166,16 +217,23 @@ namespace Alteridem.Http.Configuration
 
             return revs;
         }
+
         #endregion
 
         #region Create
-        public static void Create(UrlReservation urlReservation)
+
+        /// <summary>
+        /// Creates the reservation in HTTP.sys.
+        /// </summary>
+        /// <param name="urlReservation">The reservation to create</param>
+        /// <param name="deleteIfExists">If the given reservation exists, will delete the existing reservation and recreate it.</param>
+        public static void Create(UrlReservation urlReservation, bool deleteIfExists = false)
         {
             string sddl = generateSddl(urlReservation._securityIdentifiers);
-            reserveURL(urlReservation.Url, sddl);
+            reserveURL(urlReservation.Url, sddl, deleteIfExists);
         }
 
-        private static void reserveURL(string networkURL, string securityDescriptor)
+        private static void reserveURL(string networkURL, string securityDescriptor, bool deleteIfExists)
         {
             uint retVal = NativeMethods.HttpInitialize(HTTPAPI_VERSION.VERSION_1, Flags.HTTP_INITIALIZE_CONFIG, IntPtr.Zero);
             if (retVal == ReturnCodes.NO_ERROR)
@@ -223,9 +281,15 @@ namespace Alteridem.Http.Configuration
                 throw new Win32Exception(Convert.ToInt32(retVal));
             }
         }
+
         #endregion
 
         #region Delete
+
+        /// <summary>
+        /// Deletes the given reservation from the HTTP.sys configuration.
+        /// </summary>
+        /// <param name="urlReservation">The reservation to delete.</param>
         public static void Delete(UrlReservation urlReservation)
         {
             string sddl = generateSddl(urlReservation._securityIdentifiers);
@@ -264,9 +328,11 @@ namespace Alteridem.Http.Configuration
                 throw new Win32Exception(Convert.ToInt32(retVal));
             }
         }
+
         #endregion
 
         #region Helper
+
         private static List<SecurityIdentifier> securityIdentifiersFromSDDL(string securityDescriptor)
         {
             var csd = new CommonSecurityDescriptor(false, false, securityDescriptor);
@@ -310,9 +376,8 @@ namespace Alteridem.Http.Configuration
         {
             return getSecurityDescriptor(securityIdentifiers).GetSddlForm(AccessControlSections.Access);
         }
-        #endregion
 
-        public byte[] ToDaclBytes()
+        internal byte[] ToDaclBytes()
         {
 
             DiscretionaryAcl dacl = getDacl(this._securityIdentifiers);
@@ -321,12 +386,14 @@ namespace Alteridem.Http.Configuration
             return bytes;
         }
 
-        public byte[] ToSaclBytes()
+        internal byte[] ToSaclBytes()
         {
             var sacl = new SystemAcl(false, false, 0);
             var bytes = new byte[sacl.BinaryLength];
             sacl.GetBinaryForm(bytes, 0);
             return bytes;
         }
+
+        #endregion
     }
 }
