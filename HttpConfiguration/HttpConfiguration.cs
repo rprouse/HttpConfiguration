@@ -22,7 +22,7 @@
 //
 // **********************************************************************************
 
-using Alteridem.Http.Service.Native;
+using Alteridem.Http.Configuration.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -30,7 +30,7 @@ using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
 
-namespace Alteridem.Http.Service
+namespace Alteridem.Http.Configuration
 {
     public class HttpConfiguration : IDisposable
     {

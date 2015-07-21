@@ -24,7 +24,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace Alteridem.Http.Service.Native
+namespace Alteridem.Http.Configuration.Native
 {
     [StructLayout(LayoutKind.Sequential, Pack = 2)]
     struct HTTPAPI_VERSION

@@ -25,7 +25,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace Alteridem.Http.Service.Native
+namespace Alteridem.Http.Configuration.Native
 {
 
     /// <summary>

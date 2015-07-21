@@ -24,7 +24,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace Alteridem.Http.Service.Native
+namespace Alteridem.Http.Configuration.Native
 {
     [StructLayout(LayoutKind.Sequential)]
     struct HTTP_SERVICE_CONFIG_SSL_QUERY

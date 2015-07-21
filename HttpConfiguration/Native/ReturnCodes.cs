@@ -22,7 +22,7 @@
 //
 // **********************************************************************************
 
-namespace Alteridem.Http.Service.Native
+namespace Alteridem.Http.Configuration.Native
 {
     /// <summary>
     /// Return codes from Native API's

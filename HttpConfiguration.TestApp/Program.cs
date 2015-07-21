@@ -1,4 +1,4 @@
-﻿using Alteridem.Http.Service;
+﻿using Alteridem.Http.Configuration;
 using System;
 
 namespace HttpServiceConfiguration.TestApp
